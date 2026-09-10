@@ -121,6 +121,6 @@ SiemensInstallHelper/
 
 ---
 
-本项目有GitHub仓库有条件的同学可以到那上面反馈问题哦~
+国内的同学可以到腾讯云 **CNB 仓库**反馈问题，访问更快：
 
-GitHub仓库地址：[点击此处](https://github.com/chenpiyanghappy/SiemensInstallHelper)
+腾讯云 CNB 仓库地址：[点击此处](https://cnb.cool/chenpiyanghappy/SiemensInstallHelper)
