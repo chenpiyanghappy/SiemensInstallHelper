@@ -10,7 +10,7 @@
 
 *本项目由 AI 辅助开发（AI-assisted project）*
 
-**🌐 国内访问 GitHub 较慢？→ 推荐使用 [腾讯云 CNB 仓库](https://cnb.cool/CPY_personaluse/cpyinternalprojects/SiemensInstallHelper)（国内访问更快）**
+**🌐 国内访问 GitHub 较慢？→ 推荐使用 [腾讯云 CNB 仓库](https://cnb.cool/chenpiyanghappy/SiemensInstallHelper)（国内访问更快）**
 
 </div>
 
@@ -91,7 +91,7 @@ SiemensInstallHelper/
 - 遇到**没被知识库识别**的新报错：把报错关键词 + 解决办法提交 issue，我们会合并进内置知识库
 - 提交入口：
   - **GitHub**：`https://github.com/chenpiyanghappy/SiemensInstallHelper`
-  - **腾讯云 CNB**：`https://cnb.cool/CPY_personaluse/cpyinternalprojects/SiemensInstallHelper`
+  - **腾讯云 CNB**：`https://cnb.cool/chenpiyanghappy/SiemensInstallHelper`
 - 建议模板：
   > 系统：Win11 22H2 ｜ 软件：TIA Portal V20 ｜ 报错关键词：`InstallFailure HelpViewer_Server` ｜ 解决办法：……
 

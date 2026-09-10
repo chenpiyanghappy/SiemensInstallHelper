@@ -1153,7 +1153,7 @@ def check_runtime_silent():
 #   }
 REPOS = {
     "github":  "https://github.com/chenpiyanghappy/SiemensInstallHelper",
-    "cnb":     "https://cnb.cool/CPY_personaluse/cpyinternalprojects/SiemensInstallHelper",
+    "cnb":     "https://cnb.cool/chenpiyanghappy/SiemensInstallHelper",
 }
 
 
