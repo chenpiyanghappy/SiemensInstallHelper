@@ -10,6 +10,8 @@
 
 *本项目由 AI 辅助开发（AI-assisted project）*
 
+**🌐 国内访问 GitHub 较慢？→ 推荐使用 [腾讯云 CNB 仓库](https://cnb.cool/CPY_personaluse/cpyinternalprojects/SiemensInstallHelper)（国内访问更快）**
+
 </div>
 
 ---
