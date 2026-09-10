@@ -118,3 +118,9 @@ SiemensInstallHelper/
 **Made with 💙 by an AI-assisted project — 有问题欢迎提 Issue**
 
 </div>
+
+---
+
+本项目有GitHub仓库有条件的同学可以到那上面反馈问题哦~
+
+GitHub仓库地址：[点击此处](https://github.com/chenpiyanghappy/SiemensInstallHelper)
