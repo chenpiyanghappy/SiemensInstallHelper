@@ -4,6 +4,8 @@
 
 **免环境依赖 · 双击即用 · 自动处理 TIA Portal / STEP 7 / WinCC / S7-PLCSIM 安装期的各种问题**
 
+> **当前版本：v1.0**（v1.1「安装护航」功能已开发完成，正在内测，正式版随代码发布）
+
 > English: A zero-dependency Windows helper that automates the pain points of installing Siemens TIA Portal / STEP 7 / WinCC — cleans conflicting processes, analyzes installer logs, auto-fixes what it can (license service, pending-reboot flags, leftover processes), finds the installer on any disk including USB drives, checks VC++/.NET runtimes, downloads official runtimes, monitors the installation live, and generates offline reports or a guided help page when it cannot fix things itself.
 
 **Language：Python · 平台：Windows 10/11 · 许可：MIT**
@@ -27,12 +29,33 @@
 | ③ | **授权检查** | 检查 Automation License Manager（almservice）是否正常，异常时自动启动 |
 | ④ | **运行库检查** | 检测 .NET Framework 4.8 / 3.5 / VC++ 运行库是否齐全 |
 | ⑥⑦ | **运行库下载安装** | 从**微软官方源**自动下载并静默安装 VC++ 2015-2022（x64/x86） |
-| ⑤ | **实时监控** | 安装期间盯着日志，出现报错立即提示并给出建议 |
+| ⑤ | **实时监控 + 卡住预警** | 安装期间盯着日志，出现报错立即提示并给出建议；**日志长时间无更新时自动弹窗预警**，附排查指引（杀软拦截 / 隐藏窗口 / 真卡死），可选继续等待或停止监控 |
+| 🆕 | **错误大白话翻译** | 把"安装程序错误 / 缺 xxx.dll / 0x7E"等翻译成**大白话 + 操作步骤**（缺 VC++ 运行库 / 需重启 / 权限不足…），小白也能看懂怎么修 |
+| 🆕 | **弹窗指引手动修复** | 无法自动下载/修复时，弹窗给出**官方下载链接 + 逐步操作**，用户自己下载安装后继续；监控时还会提示"复制给同学"互助 |
 | ⑧ | **离线报错报告** | 一键生成系统信息+日志+建议的报告 txt，**离网时发给 AI / 开发者即可人工分析** |
 | ⑨ | **联网查错引导页** | 自动抓取错误 → 生成**可复制话术模板** → 一键搜索 → GitHub / 腾讯云 CNB 提交入口 |
 | 💠 | **高分屏适配** | DPI 感知，4K 高分屏下字体不发虚 |
 
 **零依赖承诺**：exe 用 PyInstaller 打包，**目标电脑不需要装 Python、不需要任何运行库**，拷贝即用。
+
+---
+
+## 📚 文档
+
+- [📄 免责声明（DISCLAIMER）](docs/免责声明.md) — 非官方工具声明 / 用途边界 / 风险自负
+- [❓ 提问的艺术（How to Ask）](docs/提问的艺术.md) — 提问模板 / 提 PR 流程 / 邮箱联系 / 沟通公约
+
+---
+
+## 🏷 版本命名规则
+
+`V(大版本).(功能版本).(修复版本)`
+
+| 段位 | 什么时候改 |
+|------|-----------|
+| **大版本** | 有**非常重磅**的功能更新时（如 v2.0 合并为"西门子百宝箱"） |
+| **功能版本** | 普通新功能更新时 |
+| **修复版本** | 修复 Bug 时 |
 
 ---
 
