@@ -33,8 +33,8 @@ class SiemensInstallGUI:
     def __init__(self, root):
         self.root = root
         root.title("西门子安装助手 SiemensInstallHelper")
-        root.geometry("760x600")
-        root.minsize(640, 460)
+        root.geometry("780x660")
+        root.minsize(680, 520)
 
         self.watcher = None
         self.watching = False
@@ -44,7 +44,7 @@ class SiemensInstallGUI:
         head.pack(fill="x")
         tk.Label(head, text="西门子安装助手", fg="white", bg="#2b5b9c",
                  font=("Microsoft YaHei", 15, "bold")).pack(pady=(10, 2))
-        tk.Label(head, text="安装前清理 · 日志分析 · 授权检查 · 运行库检查 · 实时监控",
+        tk.Label(head, text="安装前清理 · 日志分析 · 授权检查 · 运行库检查 · 实时监控 · 安装前体检",
                  fg="#cfe0f5", bg="#2b5b9c", font=("Microsoft YaHei", 9)).pack(pady=(0, 10))
 
         # 按钮区
@@ -83,6 +83,16 @@ class SiemensInstallGUI:
         self.btn_all = mk("⑩ 全部执行", lambda: self.run_all(), "#52a75c", "#3d7e46")
         self.btn_all.grid(row=2, column=2, columnspan=2, sticky="we", padx=4, pady=(6, 0))
 
+        # 第四行（v1.1：反馈/体检/复制）
+        self.btn_basic = mk("⑫ 复制基础信息", lambda: self.run_task("basic-info"), "#7f8c8d", "#5f6a6b")
+        self.btn_basic.grid(row=3, column=0, padx=4)
+        self.btn_preflight = mk("⑬ 安装前体检", lambda: self.run_task("preflight", self._preflight_done), "#e69138", "#b06d1f")
+        self.btn_preflight.grid(row=3, column=1, padx=4)
+        self.btn_fb = mk("⑭ 复制反馈模板", lambda: self.run_task("feedback"), "#7f8c8d", "#5f6a6b")
+        self.btn_fb.grid(row=3, column=2, padx=4)
+        self.btn_issue = mk("⑮ 复制Issue模板", lambda: self.run_task("issue-template"), "#7f8c8d", "#5f6a6b")
+        self.btn_issue.grid(row=3, column=3, padx=4)
+
         # 提示
         tk.Label(root, text="提示: ① 会结束浏览器/聊天/网盘等第三方进程，正在编辑的文档请先保存；系统与杀毒绝不碰",
                  fg="#666", font=("Microsoft YaHei", 8)).pack(anchor="w", padx=12)
@@ -100,10 +110,11 @@ class SiemensInstallGUI:
         self.buttons = [self.btn_clean, self.btn_log, self.btn_lic,
                         self.btn_rt, self.btn_watch, self.btn_dl,
                         self.btn_inst, self.btn_rep, self.btn_search,
-                        self.btn_find, self.btn_all]
+                        self.btn_find, self.btn_all, self.btn_basic,
+                        self.btn_preflight, self.btn_fb, self.btn_issue]
 
-        self.write("欢迎使用西门子安装助手")
-        self.write("功能：清理进程 / 智能分析(能修自动修) / 授权检查 / 运行库检查下载安装 / 实时监控 / 离线报告 / 联网查错 / 寻找安装程序")
+        self.write("欢迎使用西门子安装助手 v1.1")
+        self.write("功能：清理进程 / 智能分析(能修自动修) / 授权检查 / 运行库检查下载安装 / 实时监控 / 离线报告 / 联网查错 / 寻找安装程序 / 安装前体检 / 一键复制基础信息、反馈模板、Issue模板")
         self.write("注意：本工具只清理第三方进程和只读分析，不修改系统设置，可放心使用。")
 
         # 防误报提醒：检测常见杀软，若在运行则提示（本工具为免安装单文件，可能被误报）
@@ -171,6 +182,14 @@ class SiemensInstallGUI:
                     elif task == "find":
                         self._find_results = si.find_installers()
                         self._find_ready = True
+                    elif task == "basic-info":
+                        si.copy_basic_info_block()
+                    elif task == "feedback":
+                        si.copy_feedback_block()
+                    elif task == "issue-template":
+                        si.copy_issue_template()
+                    elif task == "preflight":
+                        self._preflight_items = si.check_env_preflight()
                 for line in buf.getvalue().splitlines():
                     self.root.after(0, self.write, line)
             except Exception as e:
@@ -198,12 +217,35 @@ class SiemensInstallGUI:
     def _dl_done(self):
         self.write("下载完成。可点『⑦ 安装运行库』静默安装（会弹 UAC 确认）。")
 
+    def _preflight_done(self):
+        """体检完成后（主线程）弹窗汇总风险项。"""
+        items = getattr(self, "_preflight_items", None) or []
+        if not items:
+            self.write("体检完成（无结果）。")
+            return
+        danger = [i for i in items if i[0] == "danger"]
+        warn = [i for i in items if i[0] == "warn"]
+        ok = [i for i in items if i[0] == "ok"]
+        lines = []
+        for level, name, state, advice in items:
+            mark = {"ok": "✓", "warn": "⚠", "danger": "✗", "tip": "i"}.get(level, "·")
+            lines.append("%s %s：%s" % (mark, name, state))
+        msg = "\n".join(lines)
+        if danger:
+            msg += "\n\n❗ 有 %d 项必须处理（标 ✗ 项），处理完再安装更稳" % len(danger)
+        elif warn:
+            msg += "\n\n⚠ 有 %d 项建议关注（标 ⚠ 项）" % len(warn)
+        else:
+            msg += "\n\n✓ 全部通过，可以开始安装"
+        self.write("体检完成：%d 项正常，%d 项提醒，%d 项风险。" % (len(ok), len(warn), len(danger)))
+        messagebox.showinfo("安装前体检", msg)
+
     def _find_done(self):
         """扫描完成后（主线程）弹出选择窗口，供用户挑选要启动的安装程序。"""
         results = getattr(self, "_find_results", None) or []
         if not results:
-            self.write("未找到疑似西门子安装程序。")
-            self.write("提示：把安装包放到任意磁盘（含U盘/移动硬盘/光盘），再点『⑪ 寻找安装程序』。")
+            self.write("未找到安装包入口（Setup.exe / Start.exe 这类总入口）。")
+            self.write("提示：把安装包解压到任意磁盘（含U盘/移动硬盘），ISO 镜像需先挂载；已安装到电脑里的程序不算安装包。")
             return
         self.write("请在弹出的窗口中选择要启动的安装程序：")
 
@@ -213,7 +255,7 @@ class SiemensInstallGUI:
         win.transient(self.root)
         win.grab_set()
 
-        tk.Label(win, text="扫描到的疑似安装程序（按匹配度排序），双击或选中后点按钮启动：",
+        tk.Label(win, text="扫描到的疑似安装程序（按匹配度排序；请优先选择 Start.exe / Setup.exe 且在安装包根目录的那个），双击或选中后点按钮启动：",
                  font=("Microsoft YaHei", 9)).pack(anchor="w", padx=10, pady=(10, 4))
 
         lb = tk.Listbox(win, font=("Consolas", 10))

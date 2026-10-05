@@ -1,0 +1,48 @@
+name: 知识库贡献（报错经验 / 小贴士）
+description: 把你遇到并解决的报错经验分享出来，帮助更多同学（管理员核对后入库，同步到工具内置报错大白话）
+title: "[知识库] "
+labels: [documentation]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢分享！提交后管理员会核对入库（error_db 知识库），并同步到工具的报错中文解读。
+  - type: input
+    id: error_signature
+    attributes:
+      label: 报错关键词 / 错误码
+      description: 例如 0x80070570、Error 1925、No found xxx.dll
+      placeholder: 0x80070570
+    validations:
+      required: true
+  - type: textarea
+    id: scenario
+    attributes:
+      label: 出现的场景
+      description: 安装到哪一步、什么环境（系统版本、TIA 版本、电脑配置）
+      placeholder: 安装 TIA V20 到 60% 时……
+  - type: textarea
+    id: solution
+    attributes:
+      label: 解决方法（亲测有效）
+      description: 具体怎么解决的，越详细越好
+      placeholder: 1. …… 2. ……
+    validations:
+      required: true
+  - type: textarea
+    id: plain
+    attributes:
+      label: 大白话解释（可选）
+      description: 用一句话让不懂技术的同学看懂这个报错是什么
+      placeholder: 其实就是磁盘不够了，清理一下就好
+  - type: checkboxes
+    id: verified
+    attributes:
+      label: 验证情况
+      options:
+        - label: 本人在至少一台电脑上验证有效
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        > 该 Issue 适合刚自学 Git/GitHub 的同学练手：Fork → 提 PR → 管理员审核合并。

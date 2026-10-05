@@ -1,0 +1,57 @@
+name: 报错求助 Bug report
+description: 安装 TIA / 西门子软件失败，提交报错与环境信息（配合工具⑧⑬⑮使用更佳）
+title: "[报错] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢反馈！请尽量补全以下信息。**报错日志请作为附件上传**（工具「⑧ 导出报错报告」可一键生成）。
+  - type: textarea
+    id: desc
+    attributes:
+      label: 问题描述
+      description: 安装时发生了什么？
+      placeholder: 安装 TIA V20 主程序时弹出报错并回滚……
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: 复现步骤
+      value: |
+        1. 以管理员身份运行安装包总入口（Start.exe / Setup.exe）
+        2. 安装到第几步出现异常？
+        3. 异常提示 / 行为：
+  - type: textarea
+    id: expected
+    attributes:
+      label: 预期行为
+      placeholder: 应继续安装至 100% 完成
+  - type: textarea
+    id: errors
+    attributes:
+      label: 报错信息 / 日志
+      description: 粘贴报错原文；日志文件请作为附件上传
+      placeholder: 报错原文（可用工具的「② 智能分析」自动匹配知识库）
+  - type: textarea
+    id: env
+    attributes:
+      label: 环境信息
+      description: 用工具的「⑫ 复制基础信息」一键复制后粘贴到这里（工具版本 / 操作系统 / 西门子组件版本）
+      placeholder: 工具版本 / 操作系统 / 西门子组件版本（⑫一键复制）
+    validations:
+      required: true
+  - type: checkboxes
+    id: tried
+    attributes:
+      label: 已尝试
+      options:
+        - label: 以管理员身份运行
+        - label: 重启后重试
+        - label: 关闭杀毒软件 / 添加信任
+  - type: markdown
+    attributes:
+      value: |
+        ---
+        > 模板由西门子安装助手配套提供，工具「⑮ 复制Issue模板」可一键生成预填充内容。

@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: 使用交流 / 反馈渠道
+    url: https://github.com/chenpiyanghappy/SiemensInstallHelper/issues
+    about: 遇到安装报错请优先用「报错求助」模板提交；紧急问题也可通过工具内的「⑭ 复制反馈模板」联系开发者。

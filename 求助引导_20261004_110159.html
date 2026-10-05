@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>西门子安装求助引导</title>
+<style>
+  body { font-family: "Microsoft YaHei", sans-serif; max-width: 860px; margin: 24px auto; padding: 0 16px; background: #f5f7fa; color: #222; }
+  h1 { color: #2b5b9c; }
+  h2 { margin-top: 28px; color: #333; }
+  .steps { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+  .step { flex: 1 1 200px; background: #fff; border: 1px solid #dfe3ea; border-radius: 10px; padding: 12px; }
+  .step b { color: #2b5b9c; }
+  .card { background: #fff; border: 1px solid #dfe3ea; border-radius: 10px; padding: 16px; margin: 12px 0; }
+  .err { background: #fdecea; color: #b42318; border-radius: 6px; padding: 6px 10px; margin: 6px 0; font-family: Consolas, monospace; font-size: 13px; word-break: break-all; }
+  .btn { display: inline-block; margin: 6px 8px 6px 0; padding: 10px 18px; background: #2b5b9c; color: #fff; border-radius: 8px; text-decoration: none; font-size: 14px; }
+  .btn.gray { background: #7f8c8d; }
+  .tip { color: #666; font-size: 13px; }
+  textarea { width: 100%; box-sizing: border-box; height: 280px; font-family: Consolas, monospace; font-size: 13px; border: 1px solid #dfe3ea; border-radius: 8px; padding: 10px; background: #fbfcfe; }
+  li { margin: 4px 0; }
+</style>
+</head>
+<body>
+  <h1>西门子安装 · 求助引导</h1>
+  <p class="tip">生成时间：2026-10-04 11:01:58 ｜ 系统：Windows-11-10.0.26300-SP0 (10.0.26300)</p>
+
+  <div class="steps">
+    <div class="step"><b>① 复制话术</b><br>点下面按钮，把求助内容复制到剪贴板</div>
+    <div class="step"><b>② 发给 AI / 搜索</b><br>粘贴给 AI 助手问，或用搜索按钮查官方/社区</div>
+    <div class="step"><b>③ 提交给开发者</b><br>把新报错贡献到知识库（GitHub 提 issue）</div>
+  </div>
+
+  <div class="card">
+    <h2>一键复制求助话术</h2>
+    <p class="tip">复制后粘贴给 AI 助手（如豆包）、发到技术社区，或提交 GitHub issue 即可。</p>
+    <textarea id="script" readonly>【问题】西门子专业软件安装失败，求帮助分析
+
+【系统信息】
+Windows-11-10.0.26300-SP0 (10.0.26300)
+
+【错误信息】
+  （未捕获到日志错误，请看下方日志文件）
+
+【日志文件】C:\Users\CHENPI~1\AppData\Local\Temp\wb-installer-register.log
+（建议把该文件也一起发过来）
+
+【已安装环境】
+  .NET Framework 4.8.1 ✓ 已安装
+  .NET Framework 3.5 ✓ 已启用
+  VC++ 运行库 ✓ 已装 11 个
+
+【自动分析建议】
+  （无）
+
+【已尝试】
+  1. 以管理员身份运行安装程序
+  2. 重启电脑后重试
+
+请帮我看看这个错误可能是什么原因、应该怎么解决？</textarea>
+    <br>
+    <button class="btn" onclick="copyScript()">📋 复制话术</button>
+    <a class="btn gray" target="_blank" id="searchLink" href="#">🔍 在 Bing 搜索这个错误</a>
+    <span id="copyTip" class="tip"></span>
+  </div>
+
+  <div class="card">
+    <h2>报错详情（自动抓取）</h2>
+    <p>最近错误行：</p>
+    <div class='err'>（未捕获到日志错误）</div>
+    <p>知识库自动建议：</p>
+    <ul><li>（未命中知识库）</li></ul>
+    <p>已安装环境：</p>
+    <ul><li>.NET Framework 4.8.1 ✓ 已安装</li><li>.NET Framework 3.5 ✓ 已启用</li><li>VC++ 运行库 ✓ 已装 11 个</li></ul>
+    <p class="tip">日志文件：C:\Users\CHENPI~1\AppData\Local\Temp\wb-installer-register.log</p>
+  </div>
+
+  
+    <div class="card">
+      <h2>④ 这个方案对你有用吗？</h2>
+      <p class="tip">一句话反馈即可，帮开发者完善知识库（微信：chenpiyanghappy ｜ 邮箱：chenpiyang20070426@gmail.com）。</p>
+      <textarea id="fb" readonly>【反馈】这条安装报错方案是否有用？
+
+是否有效：☐ 有用，已解决
+如无效，现象：
+
+【工具命中的建议】
+  （未命中知识库）
+
+【环境快照】可运行『导出环境快照』后一并附上（已脱敏）
+【反馈渠道】微信：chenpiyanghappy ｜ 邮箱：chenpiyang20070426@gmail.com</textarea>
+      <br>
+      <button class="btn gray" onclick="copyFb()">📋 复制反馈模板</button>
+      <span id="fbTip" class="tip"></span>
+    </div>
+    
+
+  
+    <div class="card">
+      <h3>③ 贡献你的发现（可选）</h3>
+      <p>如果你这次遇到的报错很特别，或找到了解决办法，欢迎提交给开发者，帮助完善知识库：</p>
+      <p class='tip'>✓ 检测到 GitHub 当前可访问。</p>
+      <a class="btn" target="_blank" href="https://github.com/chenpiyanghappy/SiemensInstallHelper/issues/new">提交 Issue（GitHub）</a><a class="btn" target="_blank" href="https://cnb.cool/chenpiyanghappy/SiemensInstallHelper/issues/new">提交 Issue（腾讯云 CNB）</a>
+      <p class="tip">提交时请附上：报错关键词（能匹配到的文字）+ 解决办法。开发者会合并进工具的知识库。</p>
+    </div>
+    
+
+  <script>
+  function copyScript() {
+    var ta = document.getElementById('script');
+    var tip = document.getElementById('copyTip');
+    ta.focus(); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) {}
+    if (!ok && navigator.clipboard) {
+      navigator.clipboard.writeText(ta.value).then(function(){ tip.textContent = '✓ 已复制到剪贴板'; });
+      return;
+    }
+    tip.textContent = ok ? '✓ 已复制到剪贴板' : '复制失败，请手动全选复制';
+  }
+  function copyFb() {
+    var ta = document.getElementById('fb');
+    var tip = document.getElementById('fbTip');
+    ta.focus(); ta.select();
+    var ok = false;
+    try { ok = document.execCommand('copy'); } catch(e) {}
+    if (!ok && navigator.clipboard) {
+      navigator.clipboard.writeText(ta.value).then(function(){ tip.textContent = '✓ 已复制到剪贴板'; });
+      return;
+    }
+    tip.textContent = ok ? '✓ 已复制到剪贴板' : '复制失败，请手动全选复制';
+  }
+  // 搜索链接带上错误关键词
+  (function() {
+    var err = '';
+    var els = document.querySelectorAll('.err');
+    if (els.length) err = els[0].textContent.trim().slice(0, 120);
+    var q = encodeURIComponent(err + ' TIA Portal 西门子 解决办法');
+    document.getElementById('searchLink').href = 'https://www.bing.com/search?q=' + q;
+  })();
+  </script>
+</body>
+</html>

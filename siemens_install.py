@@ -95,6 +95,46 @@ KNOWLEDGE = [
      "安全软件可能拦截安装。如确实需要，请暂时在杀毒软件中允许安装程序（不建议完全关闭防护）。"),
     (r"tia portal|step 7",
      "TIA Portal / STEP 7 组件相关错误。请确认安装顺序（先基础包后选件），并以管理员运行。"),
+    (r"1722|RPC 服务器不可用|0x800706BA",
+     "Windows Installer 服务异常（1722/RPC）。打开 services.msc 确认 Windows Installer 与 Remote Procedure Call 服务已启动；或命令行执行 msiexec /unregister 后 msiexec /regserver 修复。"),
+    (r"0x80070570|文件或目录损坏|corrupt",
+     "安装文件损坏（0x80070570）。安装包可能下载/解压不完整：建议把压缩包先拷到本地磁盘再解压（U盘解压易出错），解压后校验大小；仍失败则重新下载。"),
+    (r"error 1925|error 1935|1925|1935",
+     "系统组件安装失败（1925/1935）。多为系统文件或运行库损坏：先重装 VC++ 运行库与 .NET（可用本工具⑥⑦），再以管理员重装；仍失败建议运行 DISM /RestoreHealth 修复系统。"),
+    (r"error 1920|failed to start service|无法启动服务",
+     "某个系统服务启动失败（1920）。常见原因是权限不足或依赖服务被禁用：以管理员身份重试，检查服务依赖项是否正常。"),
+    (r"registry.*(denied|error)|无法写入注册表|0x80070005.*registry",
+     "注册表写入被拒绝。多为权限不足或被安全软件注册表防护拦截：以管理员运行、临时关闭注册表保护（装完记得恢复）。"),
+    (r"0x80070422|windows update.*(service|fail)|无法启动 Windows Update",
+     "Windows Update 服务未运行（0x80070422）。services.msc 中将 Windows Update 设为自动并启动；装 TIA 前建议先完成系统更新。"),
+    (r"1602|1612|install source|找不到安装源",
+     "找不到安装源（1602/1612）。安装介质被移动或未挂载：确认安装包完整在位，或重新装载 ISO/解压目录后重试。"),
+    (r"0x80070020|being used by another process|正在被占用",
+     "文件被其他进程占用（0x80070020）。先关闭所有安装程序与 TIA（可用本工具①清理进程），仍失败则重启电脑后再装。"),
+    (r"plcsim|仿真",
+     "PLCSIM 仿真组件问题。PLCSIM / PLCSIM Advanced 需单独安装，且版本必须与 TIA 匹配；建议先装主程序（Start.exe 总入口）再装仿真组件。"),
+]
+
+# 常见英文报错 → 中文大白话翻译表（配合知识库使用，降低英文报错门槛）
+PLAIN_TIPS = [
+    (r"is not recognized|不是有效",
+     "程序无法识别该文件/命令，多半是路径不对或文件缺失。"),
+    (r"could not (create|find|open|load)|无法创建|找不到文件",
+     "程序无法创建/找到/打开某个文件，多半是权限不足或路径不存在。"),
+    (r"insufficient|not enough",
+     "资源不足（磁盘/内存/权限），清理后重试。"),
+    (r"timed out|timeout",
+     "操作超时，组件加载或网络较慢，可稍后重试。"),
+    (r"dependency.*(missing|not found)|缺少.*依赖",
+     "缺少组件依赖，先装运行库（VC++ / .NET）再重试。"),
+    (r"failed to (start|initial|connect)|初始化失败|连接失败",
+     "启动/初始化/连接失败，检查相关服务状态后重试。"),
+    (r"corrupt|损坏|invalid",
+     "文件损坏或无效，重新解压/下载安装包。"),
+    (r"not registered|未注册",
+     "组件未注册，重启后重试，或修复系统组件。"),
+    (r"denied|permission",
+     "权限被拒绝，请以管理员身份运行。"),
 ]
 
 # 错误行识别：匹配错误关键词，但排除 "no error / 0 errors / without error" 等正常文本
@@ -203,6 +243,19 @@ INSTALL_SKIP_DIRS = {"windows", "program files", "program files (x86)", "program
                      "appdata", "recovery", "windows.old", "syswow64",
                      "python3", "python", "anaconda", "perfgen", "temp", "tmp"}
 
+# 组件/内部安装器特征目录：命中基本判定不是总入口，大幅降权
+# （不包含 disk_/dvd：官方镜像的 Disk1\Setup.exe 是总入口，不能误伤）
+COMPONENT_DIR_KEYS = ("instdata", "components", "setuppackage",
+                      "support", "driver", "redist", "runtime",
+                      "licence", "crack", "patch", "common files", "prereq")
+# 组件类文件名特征：SetupPackage.exe 这类组件安装器，不是总入口
+COMPONENT_FILE_KEYS = ("setuppackage", "component", "_inst", "prerequisite", "redist")
+# 明确不是安装包入口的程序 exe（已安装产品的启动器/卸载器等，直接跳过）
+NON_LAUNCHER_EXES = {
+    "startcenter.exe", "installrootcertificate.exe", "installationmanager.exe",
+    "installreport.exe", "installshield.exe", "setupfactory.exe",
+}
+
 
 def list_drives():
     """列出所有磁盘根目录，含外置磁盘/光盘。返回 [(盘符, 类型), ...]。"""
@@ -274,31 +327,60 @@ def find_installers(max_results=15):
                 dirscore = sum(2 for k in INSTALL_DIR_KEYS if k in dlower)
                 for fn in filenames:
                     fl = fn.lower()
+                    # 明确不是安装包入口的程序 exe：直接跳过（已装产品启动器/卸载器）
+                    if fl in NON_LAUNCHER_EXES or fl.startswith(("uninstall", "unins")):
+                        continue
                     if fl in INSTALL_LAUNCHERS:
-                        score = 3
+                        score = 3          # 精确启动器名（start.exe / setup.exe ...）
                     elif fl.startswith(("setup", "start", "install")) and fl.endswith(".exe"):
-                        score = 2
+                        score = 1          # 泛化 setup 类（如 SetupPackage.exe），弱于精确名
                     else:
                         continue
-                    if fl in ("start.exe", "setup.exe", "install.exe"):
+                    if fl in ("start.exe", "setup.exe", "install.exe", "autorun.exe"):
                         score += 2
                     score += min(dirscore, 8)
-                    # InstData 目录里的 Setup 是组件安装器（不是总入口），降权
-                    if "instdata" in dlower:
+                    # 组件安装器特征：文件名或目录命中（InstData/Components/SetupPackage 等）
+                    is_component = (any(k in fl for k in COMPONENT_FILE_KEYS)
+                                    or any(k in dlower for k in COMPONENT_DIR_KEYS))
+                    if any(k in fl for k in COMPONENT_FILE_KEYS):
+                        score -= 6
+                    if any(k in dlower for k in COMPONENT_DIR_KEYS):
+                        score -= 6
+                    # 已安装程序目录（TIA 装完后的 Automation/Bin 结构）进一步降权
+                    if "automation" in dlower and any(k in dlower for k in
+                                                      ("portal", "step7", "wincc", "simatic")):
                         score -= 5
+                    if "\\bin\\" in dlower:
+                        score -= 3
+                    # 浅层优先：越靠近磁盘根目录，越可能是安装包总入口
+                    depth = dirpath[len(root):].count(os.sep)
+                    score -= min(depth, 5)
                     key = (dirpath, fn)
-                    if key not in found or score > found[key]:
-                        found[key] = score
+                    if key not in found or score > found[key][0]:
+                        found[key] = (score, is_component)
         except Exception as e:
             log("  扫描 %s 出错: %s" % (root, e))
 
-    ranked = sorted(((s, os.path.join(d, f)) for (d, f), s in found.items()),
+    ranked = sorted(((s, os.path.join(d, f), c) for (d, f), (s, c) in found.items()),
                     key=lambda x: -x[0])
-    top = ranked[:max_results]
+    # 有真正的总入口（Start/Setup 类）时只展示总入口；
+    # 一个总入口都没有，才保底展示组件安装器（InstData 里的 Setup）供参考
+    main = [(s, p) for s, p, c in ranked if not c]
+    comp = [(s, p) for s, p, c in ranked if c]
+    has_main = bool(main)
+    top = (main or comp)[:max_results]
     if not top:
-        log("未找到疑似西门子安装程序。可把安装包放到任意磁盘（含U盘）后再试。")
-    else:
+        log("未找到安装包入口（Setup.exe / Start.exe 这类总入口）。")
+        log("请确认：")
+        log("  1. 安装包已解压完整（或 ISO 镜像已挂载成盘符）")
+        log("  2. 安装包位于任意磁盘中（含 U 盘/移动硬盘/光盘）")
+        log("  3. 已安装到电脑里的 TIA 程序（如 StartCenter）不算安装包入口，不会被列出")
+    elif has_main:
         log("找到 %d 个疑似安装程序（按匹配度排序）：" % len(top))
+        for i, (s, p) in enumerate(top, 1):
+            log("  [%d] %s" % (i, p))
+    else:
+        log("未找到安装包总入口，以下为组件安装器（仅供参考，不一定需要运行）：")
         for i, (s, p) in enumerate(top, 1):
             log("  [%d] %s" % (i, p))
     return top
@@ -484,6 +566,13 @@ def analyze_log(path=None):
         if re.search(pattern, content, re.IGNORECASE):
             advice.append(text)
             log("  • " + text)
+    # 英文报错 → 中文大白话（降门槛）
+    for pattern, tip in PLAIN_TIPS:
+        if re.search(pattern, content, re.IGNORECASE):
+            plain = "【大白话】" + tip
+            if plain not in advice:
+                advice.append(plain)
+                log("  • " + plain)
     if not advice:
         log("  未命中知识库。建议把上面的错误行复制给 AI 助手分析。")
     log("")
@@ -1012,6 +1101,425 @@ def install_runtime(which=None):
 
 
 # ---------------------------------------------------------------------
+# 6.5 v1.1 新功能：基础信息 / 环境快照 / 安装前体检 / 反馈 / Issue 模板
+# ---------------------------------------------------------------------
+
+TOOL_VERSION = "v1.1.0"
+FEEDBACK_WECHAT = "chenpiyanghappy"
+FEEDBACK_EMAIL = "chenpiyang20070426@gmail.com"
+
+
+def copy_to_clipboard(text):
+    """把文本复制到 Windows 剪贴板（clip.exe + UTF-16LE，兼容无 GUI 环境）。"""
+    import subprocess
+    data = (text or "").encode("utf-16-le")
+    try:
+        p = subprocess.Popen(["clip.exe"], stdin=subprocess.PIPE,
+                             creationflags=subprocess.CREATE_NO_WINDOW)
+        p.communicate(data)
+        return True
+    except Exception:
+        return False
+
+
+def _mem_info():
+    """内存信息 (总GB, 可用GB)，失败返回 (None, None)。"""
+    try:
+        import psutil
+        vm = psutil.virtual_memory()
+        return vm.total / 2**30, vm.available / 2**30
+    except Exception:
+        try:
+            import ctypes
+            class _MS(ctypes.Structure):
+                _fields_ = [("dwLength", ctypes.c_ulong),
+                            ("dwMemoryLoad", ctypes.c_ulong),
+                            ("ullTotalPhys", ctypes.c_ulonglong),
+                            ("ullAvailPhys", ctypes.c_ulonglong),
+                            ("ullTotalPageFile", ctypes.c_ulonglong),
+                            ("ullAvailPageFile", ctypes.c_ulonglong),
+                            ("ullTotalVirtual", ctypes.c_ulonglong),
+                            ("ullAvailVirtual", ctypes.c_ulonglong),
+                            ("ullAvailExtendedVirtual", ctypes.c_ulonglong)]
+            ms = _MS()
+            ms.dwLength = ctypes.sizeof(_MS)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(ms)):
+                return ms.ullTotalPhys / 2**30, ms.ullAvailPhys / 2**30
+        except Exception:
+            pass
+    return None, None
+
+
+def _mask_name(name):
+    """主机名/用户名脱敏：保留前 2 位，其余打码。"""
+    if not name:
+        return "(未知)"
+    if len(name) <= 2:
+        return name[:1] + "**"
+    return name[:2] + "*" * max(len(name) - 2, 1)
+
+
+def _extract_tia_version(disp):
+    """从注册表 DisplayName 提取 TIA 版本号（避开 32/64 架构位与 SP 号）。"""
+    m = re.search(r"V(1[0-9]|[2-9][0-9])\.0", disp)
+    if m:
+        return m.group(1) + ".0"
+    m = re.search(r"V(1[0-9]|[2-9][0-9])\b", disp)
+    if m:
+        return m.group(1)
+    m = re.search(r"\b([1-9][0-9])\.0\b", disp)
+    if m and int(m.group(1)) not in (32, 64):
+        return m.group(1) + ".0"
+    return None
+
+
+def detect_tia_versions():
+    """检测本机已安装的 TIA/西门子组件。返回 [(DisplayName, 版本), ...]。"""
+    import winreg
+    found = []
+    keys = [
+        (winreg.HKEY_LOCAL_MACHINE,
+         r"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall"),
+        (winreg.HKEY_LOCAL_MACHINE,
+         r"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall"),
+    ]
+    hit_kw = ("tia", "simatic", "wincc", "step 7", "step7", "portal",
+              "plcsim", "startdrive", "博途", "siemens")
+    for hive, sub in keys:
+        try:
+            k = winreg.OpenKey(hive, sub)
+        except OSError:
+            continue
+        try:
+            n = winreg.QueryInfoKey(k)[0]
+            for i in range(n):
+                try:
+                    sk = winreg.OpenKey(k, winreg.EnumKey(k, i))
+                    name = winreg.QueryValueEx(sk, "DisplayName")[0]
+                    if any(w in name.lower() for w in hit_kw):
+                        ver = _extract_tia_version(name)
+                        found.append((name, ver))
+                except OSError:
+                    pass
+        finally:
+            winreg.CloseKey(k)
+    return found
+
+
+def collect_basic_info():
+    """采集基础信息：工具版本 / 系统版本 / TIA 组件版本。"""
+    import platform
+    return {
+        "tool": TOOL_VERSION,
+        "os": platform.platform(),
+        "tia": detect_tia_versions(),
+        "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M"),
+    }
+
+
+def build_basic_info_block(ctx=None):
+    """生成基础信息 Markdown 块（粘贴到 Issue / 反馈时用，概括不啰嗦）。"""
+    if ctx is None:
+        ctx = collect_basic_info()
+    lines = ["### 基础信息（工具自动采集）", ""]
+    lines.append("- 工具版本：%s" % ctx["tool"])
+    lines.append("- 操作系统：%s" % ctx["os"])
+    tia = ctx["tia"]
+    if tia:
+        # 20 与 20.0 视为同一版本，统一为不带 .0 形式展示
+        def _norm(v):
+            return v[:-2] if v.endswith(".0") else v
+        portal = sorted({_norm(v) for n, v in tia if v and re.search(r"tia|portal", n, re.I)})
+        other = sorted({_norm(v) for n, v in tia if v and not re.search(r"tia|portal", n, re.I)})
+        parts = []
+        if portal:
+            parts.append("TIA Portal V" + "、V".join(portal))
+        if other:
+            parts.append("其他西门子组件 V" + "、V".join(other))
+        lines.append("- 西门子组件：" + "；".join(parts))
+    else:
+        lines.append("- 西门子组件：（未检测到）")
+    lines.append("- 采集时间：%s" % ctx["time"])
+    return "\n".join(lines)
+
+
+def copy_basic_info_block():
+    """复制基础信息块到剪贴板。返回 (是否成功, 文本)。"""
+    text = build_basic_info_block()
+    ok = copy_to_clipboard(text)
+    log("基础信息已复制到剪贴板 ✓（可直接粘贴到 Issue / 反馈）")
+    log("")
+    return ok, text
+
+
+def collect_env_snapshot():
+    """采集环境快照（主机名/用户名已脱敏打码）。"""
+    import platform
+    import socket
+    snap = {
+        "time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "os": platform.platform(),
+        "host": _mask_name(socket.gethostname()),
+        "user": _mask_name(os.environ.get("USERNAME", "")),
+        "mem": _mem_info(),
+        "disks": [],
+        "dotnet": [],
+        "alm": "未知",
+        "pending_reboot": [],
+    }
+    try:
+        import shutil
+        for d in list_drives():
+            try:
+                total, used, free = shutil.disk_usage(d[0])
+                snap["disks"].append("%s 总%.0fG 剩%.0fG" %
+                                     (d[0], total / 2**30, free / 2**30))
+            except Exception:
+                pass
+    except Exception:
+        pass
+    try:
+        snap["dotnet"] = ["%s %s" % (n, s) for n, s in check_runtime_silent()]
+    except Exception:
+        pass
+    try:
+        r = subprocess.run(["sc", "query", "almservice"], capture_output=True,
+                           text=True, errors="ignore")
+        for line in r.stdout.splitlines():
+            if "STATE" in line:
+                snap["alm"] = line.strip()
+                break
+    except Exception:
+        pass
+    try:
+        snap["pending_reboot"] = check_pending_reboot()
+    except Exception:
+        pass
+    return snap
+
+
+def export_env_snapshot():
+    """导出脱敏环境快照 txt。返回文件路径。"""
+    log("")
+    log("=" * 50)
+    log("导出环境快照（脱敏，主机名/用户名已打码）")
+    log("=" * 50)
+    snap = collect_env_snapshot()
+    lines = ["西门子安装助手 · 环境快照（脱敏）", "时间: %s" % snap["time"], ""]
+    lines.append("【系统】%s" % snap["os"])
+    lines.append("【主机】%s  【用户】%s" % (snap["host"], snap["user"]))
+    if snap["mem"][0]:
+        lines.append("【内存】总 %.1f GB / 可用 %.1f GB" % (snap["mem"][0], snap["mem"][1]))
+    if snap["disks"]:
+        lines.append("【磁盘】")
+        for d in snap["disks"]:
+            lines.append("  " + d)
+    if snap["dotnet"]:
+        lines.append("【运行库】")
+        for r in snap["dotnet"]:
+            lines.append("  " + r)
+    lines.append("【授权服务】%s" % snap["alm"])
+    if snap["pending_reboot"]:
+        lines.append("【待重启标记】")
+        for _t, desc in snap["pending_reboot"]:
+            lines.append("  " + desc)
+    else:
+        lines.append("【待重启标记】无")
+    fname = os.path.join(BASE_DIR, "环境快照_%s.txt" %
+                         datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
+    with open(fname, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))
+    log("快照已导出: %s" % fname)
+    log("此文件已脱敏，可直接发给开发者 / AI 助手分析环境问题。")
+    log("")
+    return fname
+
+
+def check_env_preflight():
+    """安装前体检：返回 [(level, 名称, 状态, 建议)]，level ∈ ok/warn/danger/tip。"""
+    import shutil
+    items = []
+
+    # 1 管理员权限
+    if is_admin():
+        items.append(("ok", "管理员权限", "已以管理员运行", "正常"))
+    else:
+        items.append(("danger", "管理员权限", "非管理员", "建议右键→以管理员身份运行本工具"))
+
+    # 2 磁盘空间
+    try:
+        total, used, free = shutil.disk_usage("C:\\")
+        gb = free / 2**30
+        if gb >= 20:
+            items.append(("ok", "C盘空间", "剩余 %.1f GB" % gb, "≥20GB，充足"))
+        else:
+            items.append(("danger", "C盘空间", "剩余 %.1f GB" % gb, "建议清理出 ≥20GB 再安装"))
+    except Exception:
+        items.append(("warn", "C盘空间", "检测失败", "无法读取磁盘占用"))
+
+    # 3 内存
+    total, avail = _mem_info()
+    if total and total >= 8:
+        items.append(("ok", "内存", "总 %.1f GB / 可用 %.1f GB" % (total, avail), "≥8GB，正常"))
+    elif total:
+        items.append(("warn", "内存", "总 %.1f GB" % total, "建议 ≥8GB（TIA 较吃内存）"))
+    else:
+        items.append(("warn", "内存", "检测失败", "建议 ≥8GB"))
+
+    # 4 .NET
+    try:
+        rt = dict(check_runtime_silent())
+        dotnet = " ".join(k for k in rt if "net" in k.lower())
+        if "4" in dotnet or any("4.8" in v for v in rt.values()):
+            items.append(("ok", ".NET", "已安装", "正常"))
+        else:
+            items.append(("warn", ".NET", "未检测到 4.x", "建议安装 .NET 4.8（本工具⑥⑦可辅助）"))
+    except Exception:
+        items.append(("warn", ".NET", "检测失败", ""))
+
+    # 5 VC++ 运行库
+    try:
+        rt = dict(check_runtime_silent())
+        vc = [k for k in rt if "vc" in k.lower() or "visual c" in k.lower()]
+        if len(vc) >= 5:
+            items.append(("ok", "VC++ 运行库", "已装 %d 个" % len(vc), "正常"))
+        elif vc:
+            items.append(("warn", "VC++ 运行库", "仅 %d 个" % len(vc), "建议用⑥⑦补齐常用版本"))
+        else:
+            items.append(("warn", "VC++ 运行库", "未检测到", "建议用⑥⑦安装"))
+    except Exception:
+        items.append(("warn", "VC++ 运行库", "检测失败", ""))
+
+    # 6 ALM 授权服务
+    try:
+        r = subprocess.run(["sc", "query", "almservice"], capture_output=True,
+                           text=True, errors="ignore")
+        running = "RUNNING" in r.stdout.upper()
+        items.append(("ok" if running else "danger", "授权服务 ALM",
+                      "运行中" if running else "未运行/异常",
+                      "正常" if running else "安装后运行③检查授权并尝试启动服务"))
+    except Exception:
+        items.append(("warn", "授权服务 ALM", "检测失败", ""))
+
+    # 7 待重启标记
+    try:
+        pr = check_pending_reboot()
+        if pr:
+            items.append(("danger", "待重启标记", "存在（%s）" % pr[0][0],
+                          "建议先重启电脑再安装，否则容易报错"))
+        else:
+            items.append(("ok", "待重启标记", "无", "正常"))
+    except Exception:
+        items.append(("warn", "待重启标记", "检测失败", ""))
+
+    # 8 杀毒软件
+    try:
+        sec = check_security_software()
+        if sec:
+            items.append(("tip", "安全软件", "运行中: %s" % "、".join(sec),
+                          "如安装被拦截，请把安装包/工具加入信任（不建议完全关闭防护）"))
+        else:
+            items.append(("ok", "安全软件", "未检测到", "正常"))
+    except Exception:
+        pass
+
+    # 9 安装路径建议
+    items.append(("tip", "安装路径", "默认 C:\\Program Files",
+                  "建议保持默认路径，避免中文/空格目录导致兼容问题"))
+
+    # 汇总输出
+    log("")
+    log("=" * 50)
+    log("安装前体检（%d 项）" % len(items))
+    log("=" * 50)
+    for level, name, state, advice in items:
+        mark = {"ok": "✓", "warn": "⚠", "danger": "✗", "tip": "i"}.get(level, "·")
+        log("%s [%s] %s：%s" % (mark, name, state, advice))
+    log("")
+    return items
+
+
+def build_feedback_block():
+    """生成反馈模板（粘贴给开发者 / 发微信 / 发邮件用）。"""
+    return "\n".join([
+        "【方案反馈】西门子安装助手 这条方案对你有用吗？",
+        "",
+        "  ① 问题是否解决：是 / 否 / 部分解决",
+        "  ② 哪个功能帮助最大（如：智能分析 / 授权检查 / 寻找安装程序）:",
+        "  ③ 遇到的问题（可选）:",
+        "  ④ 希望补充的功能（可选）:",
+        "",
+        "反馈渠道（任选其一，直接粘贴上面的①②③④回复即可）：",
+        "  微信: " + FEEDBACK_WECHAT,
+        "  邮箱: " + FEEDBACK_EMAIL,
+    ])
+
+
+def copy_feedback_block():
+    """复制反馈模板到剪贴板。返回 (是否成功, 文本)。"""
+    text = build_feedback_block()
+    ok = copy_to_clipboard(text)
+    log("反馈模板已复制到剪贴板 ✓（粘贴给开发者即可）")
+    log("")
+    return ok, text
+
+
+def build_issue_template(ctx=None):
+    """生成完整的预填充 Issue 模板（Markdown），粘贴到 GitHub/CNB 提交 Issue。"""
+    if ctx is None:
+        ctx = collect_error_context()
+    lines = []
+    lines.append("### 问题描述")
+    lines.append("（用一两句话描述安装时发生了什么，比如：安装 TIA V20 主程序时弹出报错并回滚）")
+    lines.append("")
+    lines.append("### 复现步骤")
+    lines.append("1. 以管理员身份运行安装包总入口（Start.exe / Setup.exe）")
+    lines.append("2. 安装到第几步出现异常？")
+    lines.append("3. 异常提示 / 行为：")
+    lines.append("")
+    lines.append("### 预期行为")
+    lines.append("（比如：应继续安装至 100% 完成）")
+    lines.append("")
+    lines.append("### 实际行为 / 报错信息")
+    if ctx["errors"]:
+        lines.append("```")
+        for e in ctx["errors"][:8]:
+            lines.append(e[:200])
+        lines.append("```")
+    else:
+        lines.append("（未捕获到日志错误，请附上日志文件）")
+    lines.append("")
+    lines.append("### 环境信息")
+    lines.append(build_basic_info_block())
+    lines.append("")
+    lines.append("### 日志文件")
+    if ctx["log_path"]:
+        lines.append("日志路径：%s" % ctx["log_path"])
+    else:
+        lines.append("日志路径：（未找到）SIA_*.log 通常位于 %TEMP% 或 C:\\Windows\\Temp")
+    lines.append("请把日志文件一并上传附件。")
+    lines.append("")
+    lines.append("### 已尝试")
+    lines.append("- [ ] 以管理员身份运行")
+    lines.append("- [ ] 重启后重试")
+    lines.append("- [ ] 关闭杀毒软件 / 添加信任")
+    lines.append("")
+    lines.append("---")
+    lines.append("模板由西门子安装助手自动生成；补充【问题描述】【复现步骤】后即可提交。")
+    return "\n".join(lines)
+
+
+def copy_issue_template():
+    """复制完整 Issue 模板到剪贴板。返回 (是否成功, 文本)。"""
+    text = build_issue_template()
+    ok = copy_to_clipboard(text)
+    log("Issue 模板已复制到剪贴板 ✓")
+    log("打开 GitHub/CNB 仓库 → Issues → New Issue，直接粘贴即可。")
+    log("")
+    return ok, text
+
+
+# ---------------------------------------------------------------------
 # 7. 导出报错报告（离线求助用）
 # ---------------------------------------------------------------------
 
@@ -1031,6 +1539,22 @@ def export_report():
     lines.append("")
     lines.append("【系统信息】")
     lines.append("  OS: %s" % ctx["os"])
+    # v1.1：附加脱敏环境快照（主机名/用户名打码，可放心外发）
+    try:
+        snap = collect_env_snapshot()
+        lines.append("")
+        lines.append("【环境快照（已打码）】")
+        lines.append("  主机: %s  用户: %s" % (snap["host"], snap["user"]))
+        if snap["mem"][0]:
+            lines.append("  内存: 总 %.1f GB / 可用 %.1f GB" % (snap["mem"][0], snap["mem"][1]))
+        for d in snap["disks"]:
+            lines.append("  磁盘: " + d)
+        lines.append("  授权服务: %s" % snap["alm"])
+        if snap["pending_reboot"]:
+            for _t, desc in snap["pending_reboot"]:
+                lines.append("  待重启标记: " + desc)
+    except Exception:
+        pass
     try:
         import psutil  # 非必需，失败则跳过
         vm = psutil.virtual_memory()
@@ -1080,6 +1604,9 @@ def export_report():
         lines.append("  （未命中）")
     lines.append("")
     lines.append("请把本文件连同安装日志一起发给 AI 助手/开发者，即可人工分析。")
+    lines.append("")
+    lines.append("【方案反馈】这条方案/工具对你有用吗？如果解决了问题，或希望补充功能，")
+    lines.append("欢迎回复：微信 %s / 邮箱 %s" % (FEEDBACK_WECHAT, FEEDBACK_EMAIL))
 
     fname = os.path.join(BASE_DIR, "报错报告_%s.txt" %
                          datetime.datetime.now().strftime("%Y%m%d_%H%M%S"))
@@ -1433,7 +1960,7 @@ def open_help_page():
 
 def main():
     if len(sys.argv) < 2:
-        print("用法: siemens_install.py [clean|log|license|runtime|watch|download|install-runtime|report|search|find]")
+        print("用法: siemens_install.py [clean|log|license|runtime|watch|download|install-runtime|report|search|find|basic-info|snapshot|preflight|feedback|issue-template]")
         print("  或运行 run_install.py 打开图形界面")
         return
     cmd = sys.argv[1].lower()
@@ -1466,6 +1993,19 @@ def main():
         install_runtime(t)
     elif cmd == "report":
         export_report()
+    elif cmd == "basic-info":
+        copy_basic_info_block()
+        print(build_basic_info_block())
+    elif cmd == "snapshot":
+        export_env_snapshot()
+    elif cmd == "preflight":
+        check_env_preflight()
+    elif cmd == "feedback":
+        copy_feedback_block()
+        print(build_feedback_block())
+    elif cmd == "issue-template":
+        copy_issue_template()
+        print(build_issue_template())
     elif cmd == "search":
         open_help_page()
     elif cmd == "watch":
