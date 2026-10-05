@@ -1,31 +1,34 @@
 # SiemensInstallHelper v1.1「安装护航」· Release 概要
 
-> 版本号：**v1.1.0** ｜ 发布日期：2026-10-04 ｜ 许可：MIT
-> 完整技术改动见仓库 `CHANGELOG.md`
+> 正式版命名：**GitHub `CNPROGit-V1.1.0` ｜ CNB `CNPROCNB-V1.1.0`**（平台前缀区分下载源，版本号部分一致）
+> 发布日期：2026-10-05 ｜ 许可：MIT
+> 完整技术改动见仓库 `CHANGELOG.md`；版本命名规则见 README「📌 版本命名规则」
 
 ---
 
 ## 一句话
 
-**安装护航三件套正式版 + 5 个"提交报错更省事"的新能力**——装 TIA 卡住知道怎么回事，报错不用再抄一堆英文。
+**安装护航三件套正式版 + 6 个"提交报错更省事"的新能力**——装 TIA 卡住知道怎么回事，报错不用再抄一堆英文，提 Issue 打开就是填好的模板。
 
 ## 本版新增
 
 | 功能 | 说明 |
 |---|---|
 | 🆕 卡住预警 | 安装日志长时间不更新自动弹窗，附排查指引（杀软拦截 / 隐藏窗口 / 真卡死），可选继续等待或停止 |
-| 🆕 错误大白话 | 英文报错自动翻译成大白话 + 操作步骤，小白也能看懂怎么修 |
+| 🆕 错误大白话 | 英文报错自动翻译成大白话 + 操作步骤（新增 `PLAIN_TIPS` 翻译表），小白也能看懂怎么修 |
 | 🆕 弹窗指引手动修复 | 无法自动修复时给出官方下载链接 + 逐步操作，自己装完继续 |
-| 📋 基础信息一键复制 | TIA 版本 / 系统版本 / 工具版本自动采集，复制即提交 Issue |
+| 📋 ⑫ 基础信息一键复制 | TIA 版本 / 系统版本 / 工具版本自动采集，复制即提交 Issue |
 | 🧹 环境快照脱敏导出 | 报错报告附带脱敏环境快照（用户名/主机名已打码） |
-| 🩺 精简版安装前体检 | 磁盘空间、安装路径、运行库、授权服务、杀软、待重启一站式风险清单 |
-| 📚 知识库扩充 | 内测真实报错案例并入大白话规则表 |
-| 💬 反馈入口 | 求助页 / 报告里一键复制「这条方案是否有用」反馈模板 |
+| 🩺 ⑬ 安装前体检 | 9 项风险清单：管理员权限 / 磁盘 / 内存 / 运行库 / 授权服务 / 待重启 / 杀软 / 路径 |
+| 📚 知识库扩充 | 新增 9 条真实报错规则（1722 / 0x80070570 / 1925 / 1935 / 0x80070422 等） |
+| 💬 ⑭ 反馈入口 | 求助页 / 报告里一键复制「这条方案是否有用」反馈模板 |
+| 🔎 寻找安装程序调优 | 只保留 `Start.exe / Setup.exe` 总入口，自动过滤 InstData/Components 组件安装器与已装程序启动器 |
+| 📝 ⑮ 预填充 Issue 模板 | GitHub / CNB 的 New Issue 内置完整模板（报错求助 + 知识库贡献）；GUI 一键复制预填充内容 |
 
 ## 下载
 
-- **GitHub（EXE 安装包）**：`https://github.com/chenpiyanghappy/SiemensInstallHelper/releases`
-- **源码 / 文档**：GitHub 与 CNB 同步更新
+- **GitHub（EXE 安装包）**：`https://github.com/chenpiyanghappy/SiemensInstallHelper/releases`（附件名 `CNPROGit-V1.1.0.exe`）
+- **源码 / 文档**：GitHub 与 CNB 同步更新（CNB tag `CNPROCNB-V1.1.0`）
 
 ## 变更与致谢
 
@@ -44,5 +47,5 @@
 ## CNB 发布备注
 
 > ⚠️ CNB 平台不支持直接上传 EXE 文件，安装包托管于 GitHub Release 页：
-> **EXE 下载地址：** https://github.com/chenpiyanghappy/SiemensInstallHelper/releases
-> 本仓库（CNB）同步源码、版本 Tag 与说明文档，代码与 GitHub 保持一致。
+> **EXE 下载地址：** https://github.com/chenpiyanghappy/SiemensInstallHelper/releases（附件名 `CNPROGit-V1.1.0.exe`）
+> 本仓库（CNB）同步源码、版本 Tag（`CNPROCNB-V1.1.0`）与说明文档，代码与 GitHub 保持一致。
