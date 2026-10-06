@@ -1,0 +1,137 @@
+[
+  {
+    "id": 1,
+    "title": "安装路径建议：别带中文和空格",
+    "content": "TIA Portal 建议安装到纯英文路径（如 D:\\TIA_Portal\\V20）。路径含中文、空格或特殊符号可能引发组件安装失败；很多同学的失败案例都出在这。",
+    "category": "安装",
+    "tags": [
+      "路径",
+      "安装",
+      "失败"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 2,
+    "title": "安装顺序：先基础包，后选件",
+    "content": "用安装包根目录的 Start.exe / Setup.exe 总入口安装，先装基础包，再单独安装选件（如 WinCC、PLCSIM）。跳步安装容易触发组件依赖报错。",
+    "category": "安装",
+    "tags": [
+      "顺序",
+      "Start.exe",
+      "组件"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 3,
+    "title": "U 盘解压安装包容易损坏",
+    "content": "压缩包在 U 盘上直接解压容易出错（慢且容易中断），报错 0x80070570「文件或目录损坏」时，先把压缩包拷到本地磁盘再解压，解压后核对文件大小。",
+    "category": "安装",
+    "tags": [
+      "U盘",
+      "解压",
+      "损坏",
+      "0x80070570"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 4,
+    "title": "杀软白名单：绿色单文件可能被误报",
+    "content": "本工具是免安装单文件（无数字签名），个别杀毒软件可能误报拦截。安装 TIA 时也可能被拦截组件进程，建议安装前把安装包目录加入杀软信任区，或临时退出杀软（装完记得恢复）。",
+    "category": "环境",
+    "tags": [
+      "杀软",
+      "白名单",
+      "误报",
+      "拦截"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 5,
+    "title": "磁盘空间：C 盘至少留 20~30GB",
+    "content": "TIA Portal 完整安装占用较大（20GB 起步），且安装过程会在 C 盘写临时文件。安装前确认 C 盘剩余空间足够，报错 0x80070070 就是空间不足。",
+    "category": "环境",
+    "tags": [
+      "磁盘",
+      "空间",
+      "0x80070070"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 6,
+    "title": ".NET Framework 3.5 需要手动启用",
+    "content": "TIA 部分组件依赖 .NET Framework 3.5（Win10/11 默认不启用）。控制面板 → 程序 → 启用或关闭 Windows 功能 → 勾选「.NET Framework 3.5（包括 2.0 和 3.0）」→ 确定。",
+    "category": "环境",
+    "tags": [
+      ".NET",
+      "3.5",
+      "功能",
+      "0x800F0900"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 7,
+    "title": "VC++ 运行库新旧版本冲突",
+    "content": "VC++ 2015-2022 运行库是 TIA 的常见依赖，旧版本残留可能导致组件失败（报错 1925 / 1935）。可先装最新的 VC++ 运行库，再重试安装。",
+    "category": "环境",
+    "tags": [
+      "VC++",
+      "运行库",
+      "1925",
+      "1935"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 8,
+    "title": "安装日志在哪？SIA_*.log",
+    "content": "TIA 安装日志一般在 %TEMP%\\SIA_*.log 和 C:\\Windows\\Temp 下。报错时把日志一并提交，能大幅提高排查效率——这也是本工具「智能分析日志」和「导出报错报告」做的事。",
+    "category": "排障",
+    "tags": [
+      "日志",
+      "SIA",
+      "排障"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 9,
+    "title": "待重启标记会让安装直接失败",
+    "content": "系统有「待重启」残留标记时，安装程序可能直接报错。重启电脑即可解决；本工具的「安装前体检」会自动检测这个标记。",
+    "category": "排障",
+    "tags": [
+      "重启",
+      "待重启",
+      "体检"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  },
+  {
+    "id": 10,
+    "title": "授权服务 ALM 异常：先查服务",
+    "content": "Automation License Manager（almservice）不启动会导致授权类报错。可先运行本工具「检查授权」自动启动；若仍异常，打开 services.msc 确认 almservice 为自动并启动。",
+    "category": "排障",
+    "tags": [
+      "授权",
+      "ALM",
+      "服务",
+      "license"
+    ],
+    "source": "builtin",
+    "created_at": "2026-10-06"
+  }
+]

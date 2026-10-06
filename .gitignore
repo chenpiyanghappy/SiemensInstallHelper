@@ -7,6 +7,8 @@ dist/
 # ---- 运行产物与本地数据 ----
 *.log
 *.json
+# 官方内置贴士随版本发布（user_tips.json 为本地数据，不上传）
+!tips.json
 __pycache__/
 *.pyc
 

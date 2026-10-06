@@ -1960,7 +1960,7 @@ def open_help_page():
 
 def main():
     if len(sys.argv) < 2:
-        print("用法: siemens_install.py [clean|log|license|runtime|watch|download|install-runtime|report|search|find|basic-info|snapshot|preflight|feedback|issue-template]")
+        print("用法: siemens_install.py [clean|log|license|runtime|watch|download|install-runtime|report|search|find|basic-info|snapshot|preflight|feedback|issue-template|tips]")
         print("  或运行 run_install.py 打开图形界面")
         return
     cmd = sys.argv[1].lower()
@@ -2006,6 +2006,9 @@ def main():
     elif cmd == "issue-template":
         copy_issue_template()
         print(build_issue_template())
+    elif cmd == "tips":
+        import tips as _tips
+        _tips.tips_cli(sys.argv[2:])
     elif cmd == "search":
         open_help_page()
     elif cmd == "watch":

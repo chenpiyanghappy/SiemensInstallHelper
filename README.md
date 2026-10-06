@@ -38,6 +38,7 @@
 | ⑬ | **安装前体检** | 安装前 9 项体检：管理员权限 / 磁盘空间 / 内存 / .NET / VC++ / 授权服务 / 待重启标记 / 杀软 / 安装路径建议 |
 | ⑭ | **复制反馈模板** | 一键复制「这条方案是否有用」反馈模板（微信 / 邮箱渠道） |
 | ⑮ | **复制Issue模板** | 一键生成完整预填充 Issue（问题描述 / 复现步骤 / 报错 / 环境 / 日志 / 已尝试），粘贴到 GitHub / CNB 即提交 |
+| ⑯ | **知识小贴士** | 内置安装/环境/排障贴士 + **用户自定义**（GUI 增删改，不碰源码）；一键导出 **PR 贡献素材**（自学 Git 后可向仓库提交） |
 | 💠 | **高分屏适配** | DPI 感知，4K 高分屏下字体不发虚 |
 
 **零依赖承诺**：exe 用 PyInstaller 打包，**目标电脑不需要装 Python、不需要任何运行库**，拷贝即用。
@@ -86,6 +87,11 @@ python siemens_install.py snapshot    # 导出脱敏环境快照
 python siemens_install.py preflight   # 安装前体检
 python siemens_install.py feedback    # 复制反馈模板（写剪贴板）
 python siemens_install.py issue-template  # 复制预填充 Issue 模板（写剪贴板）
+python siemens_install.py tips list   # 小贴士：列出全部
+python siemens_install.py tips search <关键词>  # 小贴士：搜索
+python siemens_install.py tips add --title "标题" --content "内容" --category 安装 --tags a,b  # 新增
+python siemens_install.py tips delete <id>  # 删除用户贴士
+python siemens_install.py tips export # 导出 PR 贡献素材（默认输出到 贡献素材/ 目录）
 ```
 
 ---
@@ -129,6 +135,9 @@ SiemensInstallHelper/
 ├── run_install.py              # 打包入口（无参=GUI，带参=命令行）
 ├── gui_siemens_install.py      # 图形界面
 ├── siemens_install.py          # 核心逻辑（寻找安装/分析/修复/运行库/监控/报告/体检/模板）
+├── tips.py                     # 知识小贴士：内置 tips.json + 用户 user_tips.json 管理、导出贡献素材
+├── tips.json                   # 官方内置贴士（只读，随版本发布）
+├── user_tips.json              # 用户自定义贴士（GUI 增删改，首次使用自动生成）
 ├── CHANGELOG.md                # 完整技术改动与彩蛋备注（对外概要见各 Release）
 ├── 启动-西门子安装助手.bat      # 双击启动入口
 ├── 运行库/                     # 自动下载的 VC++ 运行库（微软官方源）
@@ -137,6 +146,15 @@ SiemensInstallHelper/
 ├── .gitlab/issue_templates/    # CNB（GitLab 兼容）Issue 模板
 └── backup/                     # 自动生成的注册表/源码备份（可回滚）
 ```
+
+---
+
+## 🗂 小贴士怎么用
+
+- **浏览**：点「⑯ 知识小贴士」→ 左侧列表选贴士，右侧看详情；顶部可搜索关键词
+- **自定义**：点「＋ 新增贴士」添加你自己的经验（标题/分类/内容/标签）；「✎ 编辑」「－ 删除」管理自己的贴士；内置贴士只读，不可改删
+- **恢复默认**：「↺ 恢复默认」清空全部自定义贴士，回到仅内置状态
+- **向仓库贡献**：「⇪ 导出贡献素材」一键生成 `tips_contribution.json` + `CONTRIBUTING_TIPS.md`（含提交说明），自学 Git 后即可向 GitHub / CNB 提 Pull Request / 合并请求，管理员审核后并入内置贴士库
 
 ---
 

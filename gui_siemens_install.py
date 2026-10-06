@@ -33,8 +33,8 @@ class SiemensInstallGUI:
     def __init__(self, root):
         self.root = root
         root.title("西门子安装助手 SiemensInstallHelper")
-        root.geometry("780x660")
-        root.minsize(680, 520)
+        root.geometry("780x700")
+        root.minsize(680, 560)
 
         self.watcher = None
         self.watching = False
@@ -93,6 +93,10 @@ class SiemensInstallGUI:
         self.btn_issue = mk("⑮ 复制Issue模板", lambda: self.run_task("issue-template"), "#7f8c8d", "#5f6a6b")
         self.btn_issue.grid(row=3, column=3, padx=4)
 
+        # 第五行（v1.1.1：知识小贴士）
+        self.btn_tips = mk("⑯ 知识小贴士", self.open_tips, "#7f8c8d", "#5f6a6b")
+        self.btn_tips.grid(row=4, column=0, padx=4, pady=(6, 0))
+
         # 提示
         tk.Label(root, text="提示: ① 会结束浏览器/聊天/网盘等第三方进程，正在编辑的文档请先保存；系统与杀毒绝不碰",
                  fg="#666", font=("Microsoft YaHei", 8)).pack(anchor="w", padx=12)
@@ -111,10 +115,11 @@ class SiemensInstallGUI:
                         self.btn_rt, self.btn_watch, self.btn_dl,
                         self.btn_inst, self.btn_rep, self.btn_search,
                         self.btn_find, self.btn_all, self.btn_basic,
-                        self.btn_preflight, self.btn_fb, self.btn_issue]
+                        self.btn_preflight, self.btn_fb, self.btn_issue,
+                        self.btn_tips]
 
         self.write("欢迎使用西门子安装助手 v1.1")
-        self.write("功能：清理进程 / 智能分析(能修自动修) / 授权检查 / 运行库检查下载安装 / 实时监控 / 离线报告 / 联网查错 / 寻找安装程序 / 安装前体检 / 一键复制基础信息、反馈模板、Issue模板")
+        self.write("功能：清理进程 / 智能分析(能修自动修) / 授权检查 / 运行库检查下载安装 / 实时监控 / 离线报告 / 联网查错 / 寻找安装程序 / 安装前体检 / 一键复制基础信息、反馈模板、Issue模板 / 知识小贴士")
         self.write("注意：本工具只清理第三方进程和只读分析，不修改系统设置，可放心使用。")
 
         # 防误报提醒：检测常见杀软，若在运行则提示（本工具为免安装单文件，可能被误报）
@@ -346,6 +351,13 @@ class SiemensInstallGUI:
         self.write("=" * 60)
         self.run_task("runtime", callback=lambda: self.run_task("license", callback=lambda: self.run_task("clean")))
 
+    def open_tips(self):
+        """打开知识小贴士管理窗口。"""
+        try:
+            TipsWindow(self.root)
+        except Exception as e:
+            messagebox.showerror("小贴士", "打开小贴士窗口失败: %s" % e)
+
     # ---------- 实时监控 ----------
     def toggle_watch(self):
         if self.watching:
@@ -375,6 +387,244 @@ class SiemensInstallGUI:
         except Exception as e:
             self.write("监控异常: %s" % e)
         self.root.after(5000, self._poll_watch)
+
+
+class TipsWindow:
+    """知识小贴士管理窗口：浏览 / 搜索 / 新增 / 编辑 / 删除 / 恢复默认 / 导出贡献素材。
+
+    普通用户友好：全部用图形界面操作，不碰源码；
+    想贡献的同学：一键导出 PR 贡献素材（JSON + 说明文档）。
+    """
+
+    def __init__(self, master):
+        from tips import TipsManager
+        self.mgr = TipsManager()
+        self._all = []
+        self._tips = []
+
+        self.win = tk.Toplevel(master)
+        self.win.title("知识小贴士")
+        self.win.geometry("660x500")
+        self.win.minsize(600, 420)
+        self.win.transient(master)
+
+        head = tk.Frame(self.win, bg="#2b5b9c")
+        head.pack(fill="x")
+        tk.Label(head, text="知识小贴士", fg="white", bg="#2b5b9c",
+                 font=("Microsoft YaHei", 12, "bold")).pack(pady=(8, 2))
+        tk.Label(head, text="安装 / 环境 / 排障 · 内置贴士只读，★=你的自定义贴士（可增删改）",
+                 fg="#cfe0f5", bg="#2b5b9c", font=("Microsoft YaHei", 9)).pack(pady=(0, 8))
+
+        # 搜索栏
+        bar = tk.Frame(self.win)
+        bar.pack(fill="x", padx=10, pady=6)
+        self.ent_search = tk.Entry(bar, font=("Microsoft YaHei", 10))
+        self.ent_search.pack(side="left", fill="x", expand=True, ipady=2)
+        self.ent_search.bind("<Return>", lambda e: self._do_search())
+        tk.Button(bar, text="搜索", command=self._do_search,
+                  bg="#2b5b9c", fg="white", width=8).pack(side="left", padx=6)
+        tk.Button(bar, text="显示全部", command=self.refresh,
+                  width=10).pack(side="left")
+
+        # 中部：左列表 + 右详情
+        mid = tk.Frame(self.win)
+        mid.pack(fill="both", expand=True, padx=10, pady=4)
+
+        self.lb = tk.Listbox(mid, font=("Microsoft YaHei", 10), activestyle="dotbox")
+        self.lb.pack(side="left", fill="both", expand=True)
+        self.lb.bind("<<ListboxSelect>>", self._on_select)
+        self.lb.bind("<Double-Button-1>", lambda e: self._edit_selected())
+
+        sb = tk.Scrollbar(mid, orient="vertical")
+        sb.pack(side="left", fill="y")
+        self.lb.config(yscrollcommand=sb.set)
+        sb.config(command=self.lb.yview)
+
+        self.detail = tk.Text(mid, font=("Microsoft YaHei", 10), wrap="word",
+                              state="disabled", bg="#f8f9fa", width=32)
+        self.detail.pack(side="left", fill="both", expand=True, padx=(8, 0))
+
+        # 底部操作按钮
+        ops = tk.Frame(self.win)
+        ops.pack(fill="x", padx=10, pady=8)
+        for text, cmd, color in [
+            ("＋ 新增贴士", self._add_tip, "#2fb344"),
+            ("✎ 编辑", self._edit_selected, "#e69138"),
+            ("－ 删除", self._delete_selected, "#d9534f"),
+            ("↺ 恢复默认", self._restore_default, "#7f8c8d"),
+            ("⇪ 导出贡献素材", self._export_contribution, "#2b5b9c"),
+        ]:
+            tk.Button(ops, text=text, command=cmd, bg=color, fg="white",
+                      font=("Microsoft YaHei", 9)).pack(side="left", padx=3)
+        tk.Button(ops, text="关闭", command=self.win.destroy,
+                  font=("Microsoft YaHei", 9)).pack(side="right")
+
+        self.status = tk.Label(self.win, text="就绪", anchor="w", fg="#555",
+                               font=("Microsoft YaHei", 9))
+        self.status.pack(fill="x", padx=12, pady=(0, 8))
+
+        self.refresh()
+
+    # ---------- 数据 ----------
+    def _do_search(self):
+        kw = self.ent_search.get().strip()
+        self.refresh(self.mgr.search(kw) if kw else None)
+
+    def refresh(self, data=None):
+        """刷新列表；data 为 None 时显示全部。"""
+        if data is None:
+            self._tips = self.mgr.all_tips()
+        else:
+            self._tips = data
+        self.lb.delete(0, "end")
+        for t in self._tips:
+            mark = "★" if t.get("source") == "user" else "·"
+            self.lb.insert("end", "[%s] %s（%s）" % (mark, t.get("title"), t.get("category")))
+        self._show_detail(None)
+        self.status.config(text="共 %d 条贴士（内置 %d + 自定义 %d）"
+                                % (len(self._tips),
+                                   len(self.mgr.builtin_tips()),
+                                   len(self.mgr.load_user_tips())))
+
+    def _current(self):
+        sel = self.lb.curselection()
+        if not sel:
+            return None
+        return self._tips[sel[0]]
+
+    # ---------- 详情 ----------
+    def _on_select(self, _evt=None):
+        self._show_detail(self._current())
+
+    def _show_detail(self, tip):
+        self.detail.config(state="normal")
+        self.detail.delete("1.0", "end")
+        if tip:
+            src = "内置（只读）" if tip.get("source") == "builtin" else "我的自定义"
+            lines = [
+                "标题：%s" % tip.get("title"),
+                "分类：%s" % tip.get("category"),
+                "来源：%s" % src,
+                "标签：%s" % ("、".join(tip.get("tags", [])) or "无"),
+                "",
+                "内容：",
+                tip.get("content", ""),
+                "",
+            ]
+            self.detail.insert("1.0", "\n".join(lines))
+            self.detail.tag_add("title", "1.0", "1.end")
+            self.detail.tag_configure("title", font=("Microsoft YaHei", 10, "bold"))
+        self.detail.config(state="disabled")
+
+    # ---------- 新增 / 编辑 ----------
+    def _add_tip(self):
+        self._edit_dialog(None)
+
+    def _edit_selected(self):
+        tip = self._current()
+        if not tip:
+            messagebox.showinfo("提示", "请先在列表中选择一条贴士", parent=self.win)
+            return
+        if tip.get("source") == "builtin":
+            messagebox.showinfo("提示", "内置贴士是随版本发布的只读内容，不能修改。\n如需扩展，点『＋ 新增贴士』添加你自己的贴士。", parent=self.win)
+            return
+        self._edit_dialog(tip)
+
+    def _edit_dialog(self, tip):
+        """新增(tip=None)或编辑(tip=用户贴士)子窗口。"""
+        dlg = tk.Toplevel(self.win)
+        dlg.title("编辑小贴士" if tip else "新增小贴士")
+        dlg.geometry("480x360")
+        dlg.transient(self.win)
+        dlg.grab_set()
+
+        frm = tk.Frame(dlg)
+        frm.pack(fill="both", expand=True, padx=12, pady=10)
+
+        tk.Label(frm, text="标题 *", font=("Microsoft YaHei", 9)).pack(anchor="w")
+        ent_title = tk.Entry(frm, font=("Microsoft YaHei", 10))
+        ent_title.pack(fill="x", ipady=2, pady=(2, 6))
+        if tip:
+            ent_title.insert(0, tip.get("title", ""))
+
+        tk.Label(frm, text="分类", font=("Microsoft YaHei", 9)).pack(anchor="w")
+        from tips import TIPS_CATEGORIES
+        var_cat = tk.StringVar(value=(tip.get("category") if tip else "安装"))
+        opt = tk.OptionMenu(frm, var_cat, *TIPS_CATEGORIES)
+        opt.config(font=("Microsoft YaHei", 9))
+        opt.pack(anchor="w", pady=(2, 6))
+
+        tk.Label(frm, text="内容 *", font=("Microsoft YaHei", 9)).pack(anchor="w")
+        txt_content = tk.Text(frm, font=("Microsoft YaHei", 10), height=7, wrap="word")
+        txt_content.pack(fill="both", expand=True, pady=(2, 6))
+        if tip:
+            txt_content.insert("1.0", tip.get("content", ""))
+
+        tk.Label(frm, text="标签（逗号分隔，可选）", font=("Microsoft YaHei", 9)).pack(anchor="w")
+        ent_tags = tk.Entry(frm, font=("Microsoft YaHei", 10))
+        ent_tags.pack(fill="x", ipady=2, pady=(2, 6))
+        if tip:
+            ent_tags.insert(0, "，".join(tip.get("tags", [])))
+
+        def save():
+            title = ent_title.get().strip()
+            content = txt_content.get("1.0", "end").strip()
+            if not title or not content:
+                messagebox.showwarning("提示", "标题和内容不能为空", parent=dlg)
+                return
+            if tip:
+                ok, msg = self.mgr.update_tip(tip["id"], title=title, content=content,
+                                              category=var_cat.get(), tags=ent_tags.get())
+            else:
+                ok, msg = self.mgr.add_tip(title, content, var_cat.get(), ent_tags.get())
+            if ok:
+                dlg.destroy()
+                self.refresh()
+                self.status.config(text=msg)
+            else:
+                messagebox.showerror("保存失败", msg, parent=dlg)
+
+        btns = tk.Frame(dlg)
+        btns.pack(fill="x", padx=12, pady=(0, 10))
+        tk.Button(btns, text="保存", command=save, bg="#2fb344", fg="white",
+                  font=("Microsoft YaHei", 10)).pack(side="right")
+        tk.Button(btns, text="取消", command=dlg.destroy,
+                  font=("Microsoft YaHei", 10)).pack(side="right", padx=8)
+
+    # ---------- 删除 / 恢复默认 ----------
+    def _delete_selected(self):
+        tip = self._current()
+        if not tip:
+            messagebox.showinfo("提示", "请先在列表中选择一条贴士", parent=self.win)
+            return
+        if tip.get("source") == "builtin":
+            messagebox.showinfo("提示", "内置贴士不可删除", parent=self.win)
+            return
+        if messagebox.askyesno("确认删除", "确定删除贴士「%s」吗？" % tip.get("title"), parent=self.win):
+            ok, msg = self.mgr.delete_tip(tip["id"])
+            self.status.config(text=msg)
+            self.refresh()
+
+    def _restore_default(self):
+        if not self.mgr.load_user_tips():
+            messagebox.showinfo("提示", "当前没有自定义贴士，无需恢复", parent=self.win)
+            return
+        if messagebox.askyesno("恢复默认", "将清空全部自定义贴士（仅保留内置贴士），确定吗？", parent=self.win):
+            ok, msg = self.mgr.restore_default()
+            self.status.config(text=msg)
+            self.refresh()
+
+    # ---------- 导出贡献素材 ----------
+    def _export_contribution(self):
+        ok, msg, out_dir = self.mgr.export_contribution()
+        if ok:
+            self.status.config(text=msg)
+            messagebox.showinfo("导出成功",
+                                "%s\n\n已生成：\n  tips_contribution.json\n  CONTRIBUTING_TIPS.md\n\n"
+                                "自学 Git 后按说明文档即可向仓库提交（详见文档）。" % msg,
+                                parent=self.win)
+        else:
+            messagebox.showinfo("导出提示", msg, parent=self.win)
 
 
 def run_gui():
