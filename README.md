@@ -4,7 +4,7 @@
 
 **免环境依赖 · 双击即用 · 自动处理 TIA Portal / STEP 7 / WinCC / S7-PLCSIM 安装期的各种问题**
 
-> **当前版本：v1.0**（v1.1「安装护航」功能已开发完成，正在内测，正式版随代码发布）
+> **当前版本：v1.1**（安装护航：卡住预警 + 错误大白话 + 弹窗指引手动修复 + 基础信息一键复制 + 环境快照脱敏 + 安装前体检 + 反馈入口 + Issue 模板 + 知识小贴士）
 
 > English: A zero-dependency Windows helper that automates the pain points of installing Siemens TIA Portal / STEP 7 / WinCC — cleans conflicting processes, analyzes installer logs, auto-fixes what it can (license service, pending-reboot flags, leftover processes), finds the installer on any disk including USB drives, checks VC++/.NET runtimes, downloads official runtimes, monitors the installation live, and generates offline reports or a guided help page when it cannot fix things itself.
 
